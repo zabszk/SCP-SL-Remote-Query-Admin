@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2024
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCP SL Remote Query Admin", "SCP SL Remote Query Admin\SCP SL Remote Query Admin.csproj", "{956CC8F8-2124-4DD3-ABE2-0374BDDC432E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCP SL Query", "SCP SL Query\SCP SL Query.csproj", "{F26B5A6D-4207-4367-A389-BDB1271F54A0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{956CC8F8-2124-4DD3-ABE2-0374BDDC432E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{956CC8F8-2124-4DD3-ABE2-0374BDDC432E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{956CC8F8-2124-4DD3-ABE2-0374BDDC432E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{956CC8F8-2124-4DD3-ABE2-0374BDDC432E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F26B5A6D-4207-4367-A389-BDB1271F54A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F26B5A6D-4207-4367-A389-BDB1271F54A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F26B5A6D-4207-4367-A389-BDB1271F54A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F26B5A6D-4207-4367-A389-BDB1271F54A0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {11B64B57-A2BB-4190-BB2A-A9BBD439046D}
+	EndGlobalSection
+EndGlobal
