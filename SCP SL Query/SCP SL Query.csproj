@@ -51,7 +51,12 @@
     <Compile Include="Utils\Time.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="LICENSE.txt">
+    <Content Include="LICENSE">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="NOTICE">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
