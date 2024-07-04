@@ -129,12 +129,7 @@ namespace SCP_SL_Query_Client.NetworkObjects
             /// <summary>
             /// Command to execute
             /// </summary>
-            Command = 0,
-
-            /// <summary>
-            /// Command to execute, but the response won't be sent back to the client
-            /// </summary>
-            SuppressedOutputCommand = 1,
+            Command = 0
         }
 
         /// <summary>
@@ -145,7 +140,7 @@ namespace SCP_SL_Query_Client.NetworkObjects
             /// <summary>
             /// Response of a command executed by query client
             /// </summary>
-            CommandOutput = 0,
+            ConsoleString = 0,
 
             /// <summary>
             /// An error in executing query client command
@@ -158,24 +153,19 @@ namespace SCP_SL_Query_Client.NetworkObjects
             QueryMessage = 2,
 
             /// <summary>
-            /// Other string (that doesn't match any other category) to be displayed on the console
-            /// </summary>
-            ConsoleString = 3,
-
-            /// <summary>
             /// Serialized <see cref="RemoteAdminResponse"/>
             /// </summary>
-            RemoteAdminSerializedResponse = 4,
+            RemoteAdminSerializedResponse = 3,
 
             /// <summary>
             /// Plaintext remote admin response
             /// </summary>
-            RemoteAdminPlaintextResponse = 5,
+            RemoteAdminPlaintextResponse = 4,
 
             /// <summary>
             /// Plaintext remote admin response with unsuccessful status
             /// </summary>
-            RemoteAdminUnsuccessfulPlaintextResponse = 6,
+            RemoteAdminUnsuccessfulPlaintextResponse = 5,
         }
     }
 }

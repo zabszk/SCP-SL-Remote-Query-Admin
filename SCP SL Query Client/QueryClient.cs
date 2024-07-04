@@ -173,7 +173,7 @@ namespace SCP_SL_Query_Client
                             break;
                         }
 
-                        Send("noop", QueryMessage.QueryContentTypeToServer.SuppressedOutputCommand);
+                        Send("noop", QueryMessage.QueryContentTypeToServer.Command);
                     }
 
                     if (lengthToRead == 0)
