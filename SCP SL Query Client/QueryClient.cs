@@ -127,12 +127,25 @@ namespace SCP_SL_Query_Client
 
         private void ConnectInternal(QueryHandshake.ClientFlags flags, string username, ulong permissions, byte kickPower, int internalSleep)
         {
-            _c = new TcpClient();
-            _c.NoDelay = true;
-            _c.Connect(_ip, _port);
-            _s = _c.GetStream();
-            _s.ReadTimeout = 150;
-            _s.WriteTimeout = 150;
+            try
+            {
+                _c = new TcpClient();
+                _c.NoDelay = true;
+                _c.Connect(_ip, _port);
+                _s = _c.GetStream();
+                _s.ReadTimeout = 150;
+                _s.WriteTimeout = 150;
+            }
+            catch (Exception e)
+            {
+                _lastRxError = e;
+                _c?.Dispose();
+                _s?.Dispose();
+                Connected = false;
+                _stop = true;
+                OnDisconnectedFromServer?.Invoke(DisconnectionReason.ConnectionFailed);
+                return;
+            }
 
             _sw = new Stopwatch();
             _sw.Start();

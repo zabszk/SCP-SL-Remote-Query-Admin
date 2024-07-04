@@ -45,7 +45,7 @@ namespace SCP_SL_Remote_Query_Admin
                 return;
             }
 
-            if (!ipTextBox.Text.Contains(":"))
+            if (ipTextBox.Text.Contains(":"))
             {
                 var dt = ipTextBox.Text.Split(':');
 
