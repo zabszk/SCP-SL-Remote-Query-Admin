@@ -39,6 +39,10 @@
             this.executeButton = new MetroFramework.Controls.MetroButton();
             this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.linkLabel1 = new System.Windows.Forms.LinkLabel();
+            this.metroLabel4 = new MetroFramework.Controls.MetroLabel();
+            this.usernameTextBox = new MetroFramework.Controls.MetroTextBox();
+            this.consoleCheckBox = new MetroFramework.Controls.MetroCheckBox();
+            this.logCheckBox = new MetroFramework.Controls.MetroCheckBox();
             this.SuspendLayout();
             //
             // ipTextBox
@@ -126,7 +130,7 @@
             //
             // connectButton
             //
-            this.connectButton.Location = new System.Drawing.Point(23, 218);
+            this.connectButton.Location = new System.Drawing.Point(20, 348);
             this.connectButton.Name = "connectButton";
             this.connectButton.Size = new System.Drawing.Size(75, 23);
             this.connectButton.TabIndex = 4;
@@ -137,7 +141,7 @@
             // disconnectButton
             //
             this.disconnectButton.Enabled = false;
-            this.disconnectButton.Location = new System.Drawing.Point(122, 218);
+            this.disconnectButton.Location = new System.Drawing.Point(119, 348);
             this.disconnectButton.Name = "disconnectButton";
             this.disconnectButton.Size = new System.Drawing.Size(75, 23);
             this.disconnectButton.TabIndex = 5;
@@ -219,11 +223,72 @@
             this.linkLabel1.Text = "Licensed under MIT License";
             this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
             //
+            // metroLabel4
+            //
+            this.metroLabel4.AutoSize = true;
+            this.metroLabel4.Location = new System.Drawing.Point(23, 217);
+            this.metroLabel4.Name = "metroLabel4";
+            this.metroLabel4.Size = new System.Drawing.Size(131, 19);
+            this.metroLabel4.TabIndex = 12;
+            this.metroLabel4.Text = "Username (optional):";
+            //
+            // usernameTextBox
+            //
+            //
+            //
+            //
+            this.usernameTextBox.CustomButton.Image = null;
+            this.usernameTextBox.CustomButton.Location = new System.Drawing.Point(152, 1);
+            this.usernameTextBox.CustomButton.Name = "";
+            this.usernameTextBox.CustomButton.Size = new System.Drawing.Size(21, 21);
+            this.usernameTextBox.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
+            this.usernameTextBox.CustomButton.TabIndex = 1;
+            this.usernameTextBox.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.usernameTextBox.CustomButton.UseSelectable = true;
+            this.usernameTextBox.CustomButton.Visible = false;
+            this.usernameTextBox.Lines = new string[0];
+            this.usernameTextBox.Location = new System.Drawing.Point(23, 239);
+            this.usernameTextBox.MaxLength = 32767;
+            this.usernameTextBox.Name = "usernameTextBox";
+            this.usernameTextBox.PasswordChar = '\0';
+            this.usernameTextBox.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.usernameTextBox.SelectedText = "";
+            this.usernameTextBox.SelectionLength = 0;
+            this.usernameTextBox.SelectionStart = 0;
+            this.usernameTextBox.ShortcutsEnabled = true;
+            this.usernameTextBox.Size = new System.Drawing.Size(174, 23);
+            this.usernameTextBox.TabIndex = 11;
+            this.usernameTextBox.UseSelectable = true;
+            this.usernameTextBox.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
+            this.usernameTextBox.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            //
+            // consoleCheckBox
+            //
+            this.consoleCheckBox.Location = new System.Drawing.Point(23, 279);
+            this.consoleCheckBox.Name = "consoleCheckBox";
+            this.consoleCheckBox.Size = new System.Drawing.Size(174, 24);
+            this.consoleCheckBox.TabIndex = 14;
+            this.consoleCheckBox.Text = "Subscribe to console feed";
+            this.consoleCheckBox.UseSelectable = true;
+            //
+            // logCheckBox
+            //
+            this.logCheckBox.Location = new System.Drawing.Point(23, 309);
+            this.logCheckBox.Name = "logCheckBox";
+            this.logCheckBox.Size = new System.Drawing.Size(174, 24);
+            this.logCheckBox.TabIndex = 15;
+            this.logCheckBox.Text = "Subscribe to console feed";
+            this.logCheckBox.UseSelectable = true;
+            //
             // ConsoleForm
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1050, 493);
+            this.Controls.Add(this.logCheckBox);
+            this.Controls.Add(this.consoleCheckBox);
+            this.Controls.Add(this.metroLabel4);
+            this.Controls.Add(this.usernameTextBox);
             this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.metroLabel3);
             this.Controls.Add(this.executeButton);
@@ -243,7 +308,13 @@
             this.PerformLayout();
         }
 
-        #endregion
+        private MetroFramework.Controls.MetroCheckBox consoleCheckBox;
+        private MetroFramework.Controls.MetroCheckBox logCheckBox;
+
+        private MetroFramework.Controls.MetroLabel metroLabel4;
+        private MetroFramework.Controls.MetroTextBox usernameTextBox;
+
+#endregion
 
         private MetroFramework.Controls.MetroTextBox ipTextBox;
         private MetroFramework.Controls.MetroTextBox passwordTextBox;

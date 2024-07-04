@@ -62,14 +62,25 @@ namespace SCP_SL_Remote_Query_Admin
                 _client = new QueryClient(ipTextBox.Text, 7777, passwordTextBox.Text);
             }
 
-            connectButton.Enabled = false;
-            ipTextBox.Enabled = false;
-            passwordTextBox.Enabled = false;
+            EnableUI(false);
 
             _client.OnMessageReceived += MessageReceived;
             _client.OnConnectedToServer += Connected;
             _client.OnDisconnectedFromServer += Disconnected;
-            _client.Connect();
+
+            QueryHandshake.ClientFlags flags = (consoleCheckBox.Checked ? QueryHandshake.ClientFlags.SubscribeServerConsole : 0) | (logCheckBox.Checked ? QueryHandshake.ClientFlags.SubscribeServerLogs : 0);
+            _client.Connect(flags: flags, username: usernameTextBox.Text);
+        }
+
+        // ReSharper disable once InconsistentNaming
+        private void EnableUI(bool state)
+        {
+            connectButton.Enabled = state;
+            ipTextBox.Enabled = state;
+            passwordTextBox.Enabled = state;
+            usernameTextBox.Enabled = state;
+            consoleCheckBox.Enabled = state;
+            logCheckBox.Enabled = state;
         }
 
         private void disconnectButton_Click(object sender, EventArgs e)
@@ -105,10 +116,8 @@ namespace SCP_SL_Remote_Query_Admin
 
             executeButton.Enabled = false;
             disconnectButton.Enabled = false;
-            connectButton.Enabled = true;
 
-            ipTextBox.Enabled = true;
-            passwordTextBox.Enabled = true;
+            EnableUI(true);
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
