@@ -218,7 +218,7 @@ namespace SCP_SL_Query_Client
                         try
                         {
                             AES.ReadNonce(nonce, buffer);
-                            GcmBlockCipher cipher = AES.AesGcmDecryptInit(buffer, _encryptionKey, lengthToRead, out outputSize);
+                            GcmBlockCipher cipher = AES.AesGcmDecryptInit(nonce, _encryptionKey, lengthToRead, out outputSize);
                             AES.AesGcmDecrypt(cipher, buffer, cipherBuffer, 0, lengthToRead);
                         }
                         catch (Exception e)

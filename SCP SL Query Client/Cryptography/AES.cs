@@ -140,7 +140,10 @@ namespace SCP_SL_Query_Client.Cryptography
 		/// <param name="plainTextOffset">Plaintext offset</param>
 		public static void AesGcmDecrypt(GcmBlockCipher cipher, byte[] cipherText, byte[] plainText, int cipherTextOffset = 0, int cipherTextLength = 0, int plainTextOffset = 0)
 		{
-			int len = cipher.ProcessBytes(cipherText, cipherTextOffset + NonceSizeBytes, cipherTextLength, plainText, plainTextOffset);
+            if (cipherTextLength == 0)
+                cipherTextLength = cipherText.Length;
+
+			int len = cipher.ProcessBytes(cipherText, cipherTextOffset + NonceSizeBytes, cipherTextLength - NonceSizeBytes, plainText, plainTextOffset);
 			cipher.DoFinal(plainText, plainTextOffset + len);
 		}
 
