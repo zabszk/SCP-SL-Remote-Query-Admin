@@ -99,13 +99,16 @@ namespace SCP_SL_Query_Client.NetworkObjects
         /// <param name="username">Query client username</param>
         /// <param name="serverTimeoutThreshold">Query server timeout threshold in milliseconds</param>
         /// <exception cref="ArgumentException">Invalid challenge length or username specification flag is set, but username is null, empty or whitespace</exception>
-        public QueryHandshake(ushort maxPacketSize, long timestamp, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null, ushort serverTimeoutThreshold = 0)
+        public QueryHandshake(ushort maxPacketSize, long timestamp, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null, ushort serverTimeoutThreshold = 500)
         {
             if (authChallenge.Length != ChallengeLength)
                 throw new ArgumentException($"Auth challenge must be {ChallengeLength} bytes long.", nameof(authChallenge));
 
             if (flags.HasFlagFast(ClientFlags.SpecifyLogUsername) && string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username must be specified (and not be empty or whitespace) when ClientFlags.SpecifyLogUsername is set.", nameof(username));
+
+            if (serverTimeoutThreshold < 500)
+                throw new ArgumentException("Server timeout must be at least 500 ms.", nameof(serverTimeoutThreshold));
 
             MaxPacketSize = maxPacketSize;
             Timestamp = timestamp;
@@ -226,5 +229,7 @@ namespace SCP_SL_Query_Client.NetworkObjects
     public static class QueryClientFlagUtils
     {
         public static bool HasFlagFast(this QueryHandshake.ClientFlags res, QueryHandshake.ClientFlags flag) => (res & flag) == flag;
+
+        public static QueryHandshake.ClientFlags SetFlag(this QueryHandshake.ClientFlags res, QueryHandshake.ClientFlags flag, bool status) => status ? res | flag : res & ~flag;
     }
 }

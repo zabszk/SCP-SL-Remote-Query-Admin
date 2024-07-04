@@ -11,24 +11,50 @@ using SCP_SL_Query_Client.NetworkObjects;
 
 namespace SCP_SL_Query_Client
 {
+    /// <summary>
+    /// SCP:SL Query protocol client
+    /// </summary>
     public class QueryClient : IDisposable
     {
-        private readonly string _ip;
+        private bool _stop, _started;
+        private ushort _txSizeLimit, _timeout;
+        private uint _rxCounter, _txCounter;
+
         private readonly byte[] _encryptionKey;
+        private readonly ushort _rxBufferSize;
         private readonly int _port;
-        private bool _stop;
+        private readonly string _ip;
+        private readonly object _writeLock = new object();
+
         private TcpClient _c;
         private NetworkStream _s;
         private Exception _lastRxError;
-        private bool _started, _connected;
-
-        private readonly ushort _rxBufferSize;
-        private ushort _txSizeLimit;
-        private uint _rxCounter, _txCounter;
+        private Stopwatch _sw;
 
         private readonly SecureRandom _random = new SecureRandom();
 
-        private const int PingThreshold = 8000;
+        /// <summary>
+        /// SCP:SL Query client constructor
+        /// </summary>
+        /// <param name="ip">IP Address (or hostname) of the SCP:SL query server</param>
+        /// <param name="port">Port of the SCP:SL query server</param>
+        /// <param name="password">Password of the SCP:SL query server</param>
+        /// <param name="rxBufferSize">Receive buffer size</param>
+        /// <param name="txSizeLimit">Sent message size limit</param>
+        public QueryClient(string ip, int port, string password, ushort rxBufferSize = 16384, ushort txSizeLimit = ushort.MaxValue)
+        {
+            _ip = ip;
+            _port = port;
+            _rxBufferSize = rxBufferSize;
+            _txSizeLimit = txSizeLimit;
+            _encryptionKey = Sha.Sha256(password);
+        }
+
+        /// <summary>
+        /// Indicates if the client is connected to the server.
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
+        public bool Connected { get; private set; }
 
         public delegate void MessageReceived(QueryMessage message);
         public delegate void ConnectedToServer();
@@ -39,41 +65,67 @@ namespace SCP_SL_Query_Client
         /// </summary>
         public event MessageReceived OnMessageReceived;
 
+        /// <summary>
+        /// Event called when a connection to the server is successfully established.
+        /// </summary>
         public event ConnectedToServer OnConnectedToServer;
 
+        /// <summary>
+        /// Event called when the connection to the server is disconnected or connection failed.
+        /// </summary>
         public event DisconnectedFromServer OnDisconnectedFromServer;
 
-        public QueryClient(string ip, int port, string password, ushort rxBufferSize = 16384, ushort txSizeLimit = ushort.MaxValue)
-        {
-            _ip = ip;
-            _port = port;
-            _rxBufferSize = rxBufferSize;
-            _txSizeLimit = txSizeLimit;
-            _encryptionKey = Sha.Sha256(password);
-        }
-
-        public bool Connected => _connected;
-
+        /// <summary>
+        /// Disconnects from the server.
+        /// </summary>
+        // ReSharper disable once MemberCanBePrivate.Global
         public void Disconnect() => _stop = true;
 
-        public Exception GetLastRxEror() => _lastRxError;
+        /// <summary>
+        /// Gets last read exception.
+        /// </summary>
+        public Exception GetLastRxError() => _lastRxError;
 
-        //TODO: Add support for setting flags, permissions and kick power
-        public void Connect()
+        /// <summary>
+        /// Connects to a server
+        /// </summary>
+        /// <param name="connectionTimeout">Connection timeout in milliseconds</param>
+        /// <param name="flags">Client flags</param>
+        /// <param name="username">Client username</param>
+        /// <param name="permissions">Requested permissions (if you want to have lower permissions than granted by the server)</param>
+        /// <param name="kickPower">Requested kick power (if you want to have lower kick power than granted by the server)</param>
+        /// <param name="internalSleep">Delay (in milliseconds) in which the query client should check if there are new packets from the server</param>
+        /// <returns>Query client thread</returns>
+        /// <exception cref="Exception">Thrown if client has been already started.</exception>
+        /// <exception cref="ArgumentException"><see cref="internalSleep"/> must be greater than 0.</exception>
+        public Thread Connect(ushort connectionTimeout = 5000, QueryHandshake.ClientFlags flags = QueryHandshake.ClientFlags.None, string username = null, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, int internalSleep = 40)
         {
             if (_started)
                 throw new Exception("Server has been already started.");
 
-            _started = true;
+            if (internalSleep < 1)
+                throw new ArgumentException("Internal sleep must be greater than 0.", nameof(internalSleep));
 
-            new Thread(ConnectInternal)
+            _started = true;
+            _timeout = connectionTimeout;
+
+            if (username != null && string.IsNullOrWhiteSpace(username))
+                username = null;
+
+            flags = flags.SetFlag(QueryHandshake.ClientFlags.SpecifyLogUsername, username != null);
+            flags = flags.SetFlag(QueryHandshake.ClientFlags.RestrictPermissions, permissions != ulong.MaxValue || kickPower != byte.MaxValue);
+
+            Thread t = new Thread(() => ConnectInternal(flags, username, permissions, kickPower, internalSleep))
             {
                 IsBackground = true,
                 Name = "SCP SL Query Client Thread"
-            }.Start();
+            };
+            t.Start();
+
+            return t;
         }
 
-        private void ConnectInternal()
+        private void ConnectInternal(QueryHandshake.ClientFlags flags, string username, ulong permissions, byte kickPower, int internalSleep)
         {
             _c = new TcpClient();
             _c.NoDelay = true;
@@ -82,8 +134,8 @@ namespace SCP_SL_Query_Client
             _s.ReadTimeout = 150;
             _s.WriteTimeout = 150;
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
+            _sw = new Stopwatch();
+            _sw.Start();
             byte[] buffer = new byte[_rxBufferSize];
             byte[] cipherBuffer = new byte[_rxBufferSize];
             byte[] nonce = new byte[AES.NonceSizeBytes];
@@ -94,9 +146,15 @@ namespace SCP_SL_Query_Client
             {
                 try
                 {
-                    if (sw.ElapsedMilliseconds >= PingThreshold)
+                    if (!_c.Connected || !_s.CanRead || !_s.CanWrite)
                     {
-                        if (!_connected)
+                        error = DisconnectionReason.ConnectionLost;
+                        break;
+                    }
+
+                    if (_sw.ElapsedMilliseconds >= _timeout)
+                    {
+                        if (!Connected)
                         {
                             error = DisconnectionReason.ConnectionFailed;
                             break;
@@ -109,7 +167,7 @@ namespace SCP_SL_Query_Client
                     {
                         if (_c.Available < 2)
                         {
-                            Thread.Sleep(50);
+                            Thread.Sleep(internalSleep);
                             continue;
                         }
 
@@ -130,7 +188,7 @@ namespace SCP_SL_Query_Client
 
                     if (_c.Available < lengthToRead)
                     {
-                        Thread.Sleep(50);
+                        Thread.Sleep(internalSleep);
                         continue;
                     }
 
@@ -140,15 +198,15 @@ namespace SCP_SL_Query_Client
                         break;
                     }
 
-                    if (_connected)
+                    if (Connected)
                     {
                         int outputSize;
 
                         try
                         {
-                            AES.ReadNonce(nonce, buffer, 0);
+                            AES.ReadNonce(nonce, buffer);
                             GcmBlockCipher cipher = AES.AesGcmDecryptInit(buffer, _encryptionKey, lengthToRead, out outputSize);
-                            AES.AesGcmDecrypt(cipher, buffer, cipherBuffer, 0, lengthToRead, 0);
+                            AES.AesGcmDecrypt(cipher, buffer, cipherBuffer, 0, lengthToRead);
                         }
                         catch (Exception e)
                         {
@@ -196,9 +254,13 @@ namespace SCP_SL_Query_Client
                     if (qh.MaxPacketSize < _txSizeLimit)
                         _txSizeLimit = qh.MaxPacketSize;
 
+                    if (qh.ServerTimeoutThreshold > 1000)
+                        _timeout = (ushort)(qh.ServerTimeoutThreshold * 0.8);
+                    else _timeout = (ushort)(qh.ServerTimeoutThreshold * 0.65);
+
                     try
                     {
-                        QueryHandshake response = new QueryHandshake(_rxBufferSize, qh.AuthChallenge);
+                        QueryHandshake response = new QueryHandshake(_rxBufferSize, qh.AuthChallenge, flags, permissions, kickPower, username);
                         Send(response, response.SizeToServer);
                     }
                     catch (Exception e)
@@ -208,7 +270,7 @@ namespace SCP_SL_Query_Client
                         continue;
                     }
 
-                    _connected = true;
+                    Connected = true;
                     OnConnectedToServer?.Invoke();
                 }
                 catch (Exception e)
@@ -229,7 +291,7 @@ namespace SCP_SL_Query_Client
                 //Ignore
             }
 
-            _connected = false;
+            Connected = false;
             _stop = true;
             OnDisconnectedFromServer?.Invoke(error);
         }
@@ -239,6 +301,7 @@ namespace SCP_SL_Query_Client
         /// </summary>
         /// <param name="msg">Data to send</param>
         /// <param name="contentType">Content type of the data</param>
+        // ReSharper disable once MemberCanBePrivate.Global
         internal void Send(string msg, QueryMessage.QueryContentTypeToServer contentType)
         {
             if (!Connected)
@@ -255,6 +318,7 @@ namespace SCP_SL_Query_Client
         /// </summary>
         /// <param name="msg">Data to send</param>
         /// <param name="contentType">Content type of the data</param>
+        // ReSharper disable once MemberCanBePrivate.Global
         internal void Send(byte[] msg, QueryMessage.QueryContentTypeToServer contentType)
         {
             if (!Connected)
@@ -312,7 +376,16 @@ namespace SCP_SL_Query_Client
             }
         }
 
-        private void SendRaw(byte[] msg, int offset, int len) => _s.Write(msg, offset, len);
+        private void SendRaw(byte[] msg, int offset, int len)
+        {
+            lock (_writeLock)
+            {
+                _s.Write(msg, offset, len);
+
+                if (Connected)
+                    _sw.Restart();
+            }
+        }
 
         public void Dispose() => Disconnect();
     }
