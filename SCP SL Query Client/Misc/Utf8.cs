@@ -49,17 +49,5 @@ namespace SCP_SL_Query_Client.Misc
         {
             return Encoding.GetString(data, offset, count);
         }
-
-        /// <summary>When overridden in a derived class, decodes all the bytes in the specified byte array into a string.</summary>
-        public static string GetString(ReadOnlySpan<byte> data)
-        {
-            return Encoding.GetString(data);
-        }
-
-        /// <summary>When overridden in a derived class, decodes all the bytes in the specified byte array into a string.</summary>
-        public static string GetString(ReadOnlySpan<byte> data, int offset, int count)
-        {
-            return Encoding.GetString(data.Slice(offset, count));
-        }
     }
 }

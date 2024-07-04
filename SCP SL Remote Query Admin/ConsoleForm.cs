@@ -4,24 +4,23 @@ using System.Drawing.Text;
 using System.Windows.Forms;
 using MetroFramework;
 using MetroFramework.Forms;
-using SCP_SL_Query;
+using SCP_SL_Query_Client;
+using SCP_SL_Query_Client.NetworkObjects;
 
 namespace SCP_SL_Remote_Query_Admin
 {
     public partial class ConsoleForm : MetroForm
     {
         private QueryClient _client;
-        private readonly ClientInterface _i;
-        private readonly PrivateFontCollection _fonts;
+        private readonly object _consoleLock = new object();
 
         public ConsoleForm()
         {
             InitializeComponent();
-            RichTextBox.CheckForIllegalCrossThreadCalls = false;
-            _i = new ClientInterface(this);
-            _fonts = new PrivateFontCollection();
-            _fonts.AddFontFile("DroidSansMono.ttf");
-            console.Font = new Font(_fonts.Families[0], 9);
+            CheckForIllegalCrossThreadCalls = false;
+            PrivateFontCollection fonts = new();
+            fonts.AddFontFile("DroidSansMono.ttf");
+            console.Font = new Font(fonts.Families[0], 9);
         }
 
         private void commandBox_KeyDown(object sender, KeyEventArgs e)
@@ -33,53 +32,44 @@ namespace SCP_SL_Remote_Query_Admin
 
         private void executeButton_Click(object sender, EventArgs e)
         {
-            _client.Send(commandBox.Text);
+            AppendConsole(1, commandBox.Text);
+            _client.Send(commandBox.Text, QueryMessage.QueryContentTypeToServer.Command);
             commandBox.Text = "";
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
+            if (passwordTextBox.Text == "")
+            {
+                MetroMessageBox.Show(this, "Please enter a password", "Invalid Password", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!ipTextBox.Text.Contains(":"))
+            {
+                var dt = ipTextBox.Text.Split(':');
+
+                if (dt.Length != 2 || !ushort.TryParse(dt[1], out ushort port))
+                {
+                    MetroMessageBox.Show(this, "Please enter correct IP or IP:Port", "Invalid IP", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                _client = new QueryClient(dt[0], port, passwordTextBox.Text);
+            }
+            else
+            {
+                _client = new QueryClient(ipTextBox.Text, 7777, passwordTextBox.Text);
+            }
+
             connectButton.Enabled = false;
             ipTextBox.Enabled = false;
             passwordTextBox.Enabled = false;
-            keepAliveLabel.Visible = false;
 
-            _client = null;
-
-            if (ipTextBox.Text.Contains(":"))
-            {
-                var dt = ipTextBox.Text.Split(':');
-                if (dt.Length != 2) MetroMessageBox.Show(this, "Please enter correct IP or IP:Port", "Invalid IP", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                else
-                {
-                    var port = -1;
-                    try
-                    {
-                        port = Convert.ToInt32(dt[1]);
-                    }
-                    catch
-                    {
-                        MetroMessageBox.Show(this, "Please enter correct IP or IP:Port", "Invalid IP", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-
-                    if (port != -1)
-                    {
-                        _client = new QueryClient(dt[0], port, _i);
-                    }
-                }
-            }
-            else
-            {
-                _client = new QueryClient(ipTextBox.Text, 7777, _i);
-            }
-
-            if (_client != null) _client.Connect();
-            else
-            {
-                connectButton.Enabled = true;
-                ipTextBox.Enabled = true;
-                passwordTextBox.Enabled = true;
-            }
+            _client.OnMessageReceived += MessageReceived;
+            _client.OnConnectedToServer += Connected;
+            _client.OnDisconnectedFromServer += Disconnected;
+            _client.Connect();
         }
 
         private void disconnectButton_Click(object sender, EventArgs e)
@@ -87,31 +77,27 @@ namespace SCP_SL_Remote_Query_Admin
             _client.Disconnect();
         }
 
-        internal void Connected()
+        private void MessageReceived(QueryMessage message)
+        {
+            AppendConsole(0, message.ToString());
+        }
+
+        private void Connected()
         {
             executeButton.Enabled = true;
             disconnectButton.Enabled = true;
-            keepAliveLabel.Visible = true;
-            keepAliveLabel.Text = "Last Keepalive:";
-            if (passwordTextBox.Text != "") _client.Password = passwordTextBox.Text;
         }
 
-        internal void KeepaliveReceived()
+        private void Disconnected(DisconnectionReason reason)
         {
-            keepAliveLabel.Text = "Last Keepalive:" + Environment.NewLine + DateTime.Now.ToString("s");
-        }
+            AppendConsole(2, $"Disconnected: {reason}");
 
-        internal void Disconnected()
-        {
             executeButton.Enabled = false;
             disconnectButton.Enabled = false;
             connectButton.Enabled = true;
 
             ipTextBox.Enabled = true;
             passwordTextBox.Enabled = true;
-
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -119,39 +105,29 @@ namespace SCP_SL_Remote_Query_Admin
             new License().ShowDialog();
         }
 
-        internal void AppendConsole(int type, int signed, string message)
+        private void AppendConsole(int type, string message)
         {
-            ColorizeSyntax(console, type, signed, message);
-        }
+            lock (_consoleLock)
+            {
+                console.AppendText("<" + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString() + "> ", Color.RoyalBlue);
+                switch (type)
+                {
+                    case 0:
+                        console.AppendText("INCOMING ", Color.DarkTurquoise);
+                        break;
+                    case 1:
+                        console.AppendText("OUTGOING ", Color.MediumSpringGreen);
+                        break;
+                    case 2:
+                        console.AppendText("INTERNAL ", Color.Magenta);
+                        break;
+                    case 3:
+                        console.AppendText("ERROR    ", Color.Orange);
+                        break;
+                }
 
-        private static void ColorizeSyntax(RichTextBox box, int type, int signed, string message)
-        {
-            box.AppendText("<" + DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString() + "> ", Color.RoyalBlue);
-            switch (type)
-            {
-                case 0:
-                    box.AppendText("INCOMING ", Color.DarkTurquoise);
-                    break;
-                case 1:
-                    box.AppendText("OUTGOING ", Color.MediumSpringGreen);
-                    break;
-                case 2:
-                    box.AppendText("INTERNAL ", Color.Magenta);
-                    break;
-                case 3:
-                    box.AppendText("ERROR    ", Color.Orange);
-                    break;
+                console.AppendText(message + Environment.NewLine);
             }
-            switch (signed)
-            {
-                case 0:
-                    box.AppendText("UNSIGNED ", Color.Crimson);
-                    break;
-                case 1:
-                    box.AppendText(" SIGNED  ", Color.Cyan);
-                    break;
-            }
-            box.AppendText(message + Environment.NewLine);
         }
     }
 

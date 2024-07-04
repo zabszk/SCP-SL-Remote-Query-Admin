@@ -120,7 +120,7 @@
   <data name="textBox1.Text" xml:space="preserve">
     <value>MIT License
 
-Copyright (c) 2018 Łukasz Jurczyk
+Copyright (c) 2018-2024 Łukasz "zabszk" Jurczyk
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -142,6 +142,8 @@ SOFTWARE.
 
 
 This software includes "MetroModernUI" developed by Dennis Magno.
+
+This software includes "BouncyCastle.Cryptography" developed by Legion of the Bouncy Castle Inc.
 
 This software includes "Droid Sans Mono" created by Google Android under Apache License v2.0.
 Text of Apache License v2.0 can be found in "NOTICE.txt" file.</value>

@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
+    <Copyright>Łukasz "zabszk" Jurczyk, 2018-2024</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -58,7 +59,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientInterface.cs" />
     <Compile Include="ConsoleForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -109,9 +109,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SCP SL Query\SCP SL Query.csproj">
-      <Project>{f26b5a6d-4207-4367-a389-bdb1271f54a0}</Project>
-      <Name>SCP SL Query</Name>
+    <ProjectReference Include="..\SCP SL Query Client\SCP SL Query Client.csproj">
+      <Project>{98f3c0a4-098e-4c19-9cc3-6faf6c1f29ab}</Project>
+      <Name>SCP SL Query Client</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -119,10 +119,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <PropertyGroup>
-      <Deterministic>true</Deterministic>
-      <DeterministicSourcePaths>true</DeterministicSourcePaths>
-      <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
-    </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -302,7 +302,7 @@ namespace SCP_SL_Query_Client
         /// <param name="msg">Data to send</param>
         /// <param name="contentType">Content type of the data</param>
         // ReSharper disable once MemberCanBePrivate.Global
-        internal void Send(string msg, QueryMessage.QueryContentTypeToServer contentType)
+        public void Send(string msg, QueryMessage.QueryContentTypeToServer contentType)
         {
             if (!Connected)
                 throw new Exception("Not connected to server.");
@@ -319,7 +319,7 @@ namespace SCP_SL_Query_Client
         /// <param name="msg">Data to send</param>
         /// <param name="contentType">Content type of the data</param>
         // ReSharper disable once MemberCanBePrivate.Global
-        internal void Send(byte[] msg, QueryMessage.QueryContentTypeToServer contentType)
+        public void Send(byte[] msg, QueryMessage.QueryContentTypeToServer contentType)
         {
             if (!Connected)
                 throw new Exception("Not connected to server.");

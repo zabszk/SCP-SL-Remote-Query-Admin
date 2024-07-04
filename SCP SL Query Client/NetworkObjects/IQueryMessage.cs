@@ -4,6 +4,6 @@ namespace SCP_SL_Query_Client.NetworkObjects
 {
     public interface IQueryMessage
     {
-        public int Serialize(Span<byte> buffer);
+        int Serialize(Span<byte> buffer);
     }
 }

@@ -38,7 +38,7 @@
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.Size = new System.Drawing.Size(765, 367);
+            this.textBox1.Size = new System.Drawing.Size(765, 387);
             this.textBox1.TabIndex = 0;
             this.textBox1.Text = resources.GetString("textBox1.Text");
             // 
@@ -46,7 +46,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(813, 441);
+            this.ClientSize = new System.Drawing.Size(813, 463);
             this.Controls.Add(this.textBox1);
             this.MaximizeBox = false;
             this.Name = "License";
@@ -54,7 +54,6 @@
             this.Text = "License";
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
         #endregion
