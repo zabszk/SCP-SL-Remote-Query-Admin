@@ -8,210 +8,223 @@ using SCP_SL_Query_Client.Misc;
 
 namespace SCP_SL_Query_Client.NetworkObjects
 {
-	/// <summary>
-	/// Handshake between query client and SCP:SL server
-	/// </summary>
-	public readonly struct QueryHandshake : IQueryMessage
-	{
-		/// <summary>
-		/// Maximum supported received packet size
-		/// </summary>
-		public readonly ushort MaxPacketSize;
+    /// <summary>
+    /// Handshake between query client and SCP:SL server
+    /// </summary>
+    public readonly struct QueryHandshake : IQueryMessage
+    {
+        /// <summary>
+        /// Maximum supported received packet size
+        /// </summary>
+        public readonly ushort MaxPacketSize;
 
-		/// <summary>
-		/// Handshake generation timestamp
-		/// </summary>
-		public readonly long Timestamp;
+        /// <summary>
+        /// Handshake generation timestamp
+        /// </summary>
+        public readonly long Timestamp;
 
-		/// <summary>
-		/// Handshake authentication challenge
-		/// </summary>
-		public readonly byte[] AuthChallenge;
+        /// <summary>
+        /// Handshake authentication challenge
+        /// </summary>
+        public readonly byte[] AuthChallenge;
 
-		/// <summary>
-		/// Query client flags
-		/// Ignored when handshake is sent to the client
-		/// </summary>
-		public readonly ClientFlags Flags;
+        /// <summary>
+        /// Query server timeout threshold in milliseconds
+        /// </summary>
+        public readonly ushort ServerTimeoutThreshold;
 
-		/// <summary>
-		/// Permissions requested by the client
-		/// </summary>
-		public readonly ulong Permissions;
+        /// <summary>
+        /// Query client flags
+        /// Ignored when handshake is sent to the client
+        /// </summary>
+        public readonly ClientFlags Flags;
 
-		/// <summary>
-		/// Kick power requested by the client
-		/// </summary>
-		public readonly byte KickPower;
+        /// <summary>
+        /// Permissions requested by the client
+        /// </summary>
+        public readonly ulong Permissions;
 
-		/// <summary>
-		/// Query client username (only for logging purposes)
-		/// </summary>
-		public readonly string Username;
+        /// <summary>
+        /// Kick power requested by the client
+        /// </summary>
+        public readonly byte KickPower;
 
-		/// <summary>
-		/// Challenge length
-		/// </summary>
-		public const int ChallengeLength = 24;
+        /// <summary>
+        /// Query client username (only for logging purposes)
+        /// </summary>
+        public readonly string Username;
 
-		/// <summary>
-		/// Size of challenge when sent to the client
-		/// </summary>
-		public const int SizeToClient = sizeof(ushort) + sizeof(long) + ChallengeLength;
+        /// <summary>
+        /// Challenge length
+        /// </summary>
+        public const int ChallengeLength = 24;
 
-		/// <summary>
-		/// Size of challenge when sent to the server
-		/// </summary>
-		public int SizeToServer => SizeToClient + sizeof(byte) + (Flags.HasFlagFast(ClientFlags.RestrictPermissions) ? sizeof(ulong) + sizeof(byte) : 0) + (Flags.HasFlagFast(ClientFlags.SpecifyLogUsername) ? Utf8.GetLength(Username) : 0);
+        /// <summary>
+        /// Size of the common part of the query handshake
+        /// </summary>
+        private const int CommonSize = sizeof(ushort) + sizeof(long) + ChallengeLength;
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="maxPacketSize">Maximum supported received packet size</param>
-		/// <param name="authChallenge">Handshake authentication challenge</param>
-		/// <param name="flags">Client flags</param>
-		/// <param name="permissions">Permissions requested by query user</param>
-		/// <param name="kickPower">Kick power requested by query user</param>
-		/// <param name="username">Query client username</param>
-		/// <exception cref="ArgumentException">Invalid challenge length or username specification flag is set, but username is null, empty or whitespace</exception>
-		public QueryHandshake(ushort maxPacketSize, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null) : this(maxPacketSize, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), authChallenge, flags, permissions, kickPower, username) { }
+        /// <summary>
+        /// Size of challenge when sent to the client
+        /// </summary>
+        public const int SizeToClient = CommonSize + sizeof(ushort);
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		/// <param name="maxPacketSize">Maximum supported received packet size</param>
-		/// <param name="timestamp">Handshake generation timestamp</param>
-		/// <param name="authChallenge">Handshake authentication challenge</param>
-		/// <param name="flags">Client flags</param>
-		/// <param name="permissions">Permissions requested by query user</param>
-		/// <param name="kickPower">Kick power requested by query user</param>
-		/// <param name="username">Query client username</param>
-		/// <exception cref="ArgumentException">Invalid challenge length or username specification flag is set, but username is null, empty or whitespace</exception>
-		public QueryHandshake(ushort maxPacketSize, long timestamp, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null)
-		{
-			if (authChallenge.Length != ChallengeLength)
-				throw new ArgumentException($"Auth challenge must be {ChallengeLength} bytes long.", nameof(authChallenge));
+        /// <summary>
+        /// Size of challenge when sent to the server
+        /// </summary>
+        public int SizeToServer => CommonSize + sizeof(byte) + (Flags.HasFlagFast(ClientFlags.RestrictPermissions) ? sizeof(ulong) + sizeof(byte) : 0) + (Flags.HasFlagFast(ClientFlags.SpecifyLogUsername) ? Utf8.GetLength(Username) : 0);
 
-			if (flags.HasFlagFast(ClientFlags.SpecifyLogUsername) && string.IsNullOrWhiteSpace(username))
-				throw new ArgumentException("Username must be specified (and not be empty or whitespace) when ClientFlags.SpecifyLogUsername is set.", nameof(username));
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="maxPacketSize">Maximum supported received packet size</param>
+        /// <param name="authChallenge">Handshake authentication challenge</param>
+        /// <param name="flags">Client flags</param>
+        /// <param name="permissions">Permissions requested by query user</param>
+        /// <param name="kickPower">Kick power requested by query user</param>
+        /// <param name="username">Query client username</param>
+        /// <param name="serverTimeoutThreshold">Query server timeout threshold in milliseconds</param>
+        /// <exception cref="ArgumentException">Invalid challenge length or username specification flag is set, but username is null, empty or whitespace</exception>
+        public QueryHandshake(ushort maxPacketSize, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null, ushort serverTimeoutThreshold = 0) : this(maxPacketSize, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), authChallenge, flags, permissions, kickPower, username, serverTimeoutThreshold) { }
 
-			MaxPacketSize = maxPacketSize;
-			Timestamp = timestamp;
-			AuthChallenge = authChallenge;
-			Flags = flags;
-			Permissions = permissions;
-			KickPower = kickPower;
-			Username = username;
-		}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="maxPacketSize">Maximum supported received packet size</param>
+        /// <param name="timestamp">Handshake generation timestamp</param>
+        /// <param name="authChallenge">Handshake authentication challenge</param>
+        /// <param name="flags">Client flags</param>
+        /// <param name="permissions">Permissions requested by query user</param>
+        /// <param name="kickPower">Kick power requested by query user</param>
+        /// <param name="username">Query client username</param>
+        /// <param name="serverTimeoutThreshold">Query server timeout threshold in milliseconds</param>
+        /// <exception cref="ArgumentException">Invalid challenge length or username specification flag is set, but username is null, empty or whitespace</exception>
+        public QueryHandshake(ushort maxPacketSize, long timestamp, byte[] authChallenge, ClientFlags flags = ClientFlags.None, ulong permissions = ulong.MaxValue, byte kickPower = byte.MaxValue, string username = null, ushort serverTimeoutThreshold = 0)
+        {
+            if (authChallenge.Length != ChallengeLength)
+                throw new ArgumentException($"Auth challenge must be {ChallengeLength} bytes long.", nameof(authChallenge));
 
-		/// <summary>
-		/// Validates handshake expiration
-		/// </summary>
-		/// <param name="timeTolerance">Allowed time difference (in seconds) between server and client</param>
-		/// <returns></returns>
-		public bool Validate(int timeTolerance = 120) => Math.Abs(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - Timestamp) <= timeTolerance;
+            if (flags.HasFlagFast(ClientFlags.SpecifyLogUsername) && string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("Username must be specified (and not be empty or whitespace) when ClientFlags.SpecifyLogUsername is set.", nameof(username));
 
-		/// <summary>
-		/// Serializes into a byte span
-		/// </summary>
-		/// <param name="buffer">Output data</param>
-		public int Serialize(Span<byte> buffer)
-		{
-			BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(0, 2), MaxPacketSize);
-			BinaryPrimitives.WriteInt64BigEndian(buffer.Slice(2, 8), Timestamp);
-			AuthChallenge.CopyTo(buffer.Slice(10, ChallengeLength));
+            MaxPacketSize = maxPacketSize;
+            Timestamp = timestamp;
+            AuthChallenge = authChallenge;
+            ServerTimeoutThreshold = serverTimeoutThreshold;
+            Flags = flags;
+            Permissions = permissions;
+            KickPower = kickPower;
+            Username = username;
+        }
 
-			buffer[ChallengeLength + 10] = (byte)Flags;
-			int start = ChallengeLength + 11;
+        /// <summary>
+        /// Validates handshake expiration
+        /// </summary>
+        /// <param name="timeTolerance">Allowed time difference (in seconds) between server and client</param>
+        /// <returns></returns>
+        public bool Validate(int timeTolerance = 120) => Math.Abs(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - Timestamp) <= timeTolerance;
 
-			if (Flags.HasFlagFast(ClientFlags.RestrictPermissions))
-			{
-				BinaryPrimitives.WriteUInt64BigEndian(buffer.Slice(start, sizeof(ulong)), Permissions);
-				start += sizeof(ulong);
-				buffer[start++] = KickPower;
-			}
+        /// <summary>
+        /// Serializes into a byte span
+        /// </summary>
+        /// <param name="buffer">Output data</param>
+        public int Serialize(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(0, 2), MaxPacketSize);
+            BinaryPrimitives.WriteInt64BigEndian(buffer.Slice(2, 8), Timestamp);
+            AuthChallenge.CopyTo(buffer.Slice(10, ChallengeLength));
 
-			if (Flags.HasFlagFast(ClientFlags.SpecifyLogUsername))
-			{
-				int len = Utf8.GetLength(Username);
-				byte[] usernameBuffer = ArrayPool<byte>.Shared.Rent(len);
+            buffer[ChallengeLength + 10] = (byte)Flags;
+            int start = ChallengeLength + 11;
 
-				try
-				{
-					Utf8.GetBytes(Username, usernameBuffer);
-					new ReadOnlySpan<byte>(usernameBuffer, 0, len).CopyTo(buffer.Slice(start, len));
-				}
-				finally
-				{
-					ArrayPool<byte>.Shared.Return(usernameBuffer);
-				}
-			}
+            if (Flags.HasFlagFast(ClientFlags.RestrictPermissions))
+            {
+                BinaryPrimitives.WriteUInt64BigEndian(buffer.Slice(start, sizeof(ulong)), Permissions);
+                start += sizeof(ulong);
+                buffer[start++] = KickPower;
+            }
 
-			return SizeToServer;
-		}
+            if (Flags.HasFlagFast(ClientFlags.SpecifyLogUsername))
+            {
+                int len = Utf8.GetLength(Username);
+                byte[] usernameBuffer = ArrayPool<byte>.Shared.Rent(len);
 
-		/// <summary>
-		/// Deserializes message from a byte span
-		/// </summary>
-		/// <param name="buffer">Serialized data</param>
-		/// <returns>Deserialized message</returns>
-		public static QueryHandshake Deserialize(ReadOnlySpan<byte> buffer)
-		{
-			ushort maxPacketSize = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(0, 2));
-			long timestamp = BinaryPrimitives.ReadInt64BigEndian(buffer.Slice(2, 8));
-			byte[] authChallenge = buffer.Slice(10, ChallengeLength).ToArray();
+                try
+                {
+                    Utf8.GetBytes(Username, usernameBuffer);
+                    new ReadOnlySpan<byte>(usernameBuffer, 0, len).CopyTo(buffer.Slice(start, len));
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(usernameBuffer);
+                }
+            }
 
-            return new QueryHandshake(maxPacketSize, timestamp, authChallenge);
-		}
+            return SizeToServer;
+        }
 
-		/// <summary>
-		/// Query client flags
-		/// </summary>
-		[Flags]
-		public enum ClientFlags : byte
-		{
-			/// <summary>
-			/// No flags
-			/// </summary>
-			None = 0,
+        /// <summary>
+        /// Deserializes message from a byte span
+        /// </summary>
+        /// <param name="buffer">Serialized data</param>
+        /// <returns>Deserialized message</returns>
+        public static QueryHandshake Deserialize(ReadOnlySpan<byte> buffer)
+        {
+            ushort maxPacketSize = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(0, 2));
+            long timestamp = BinaryPrimitives.ReadInt64BigEndian(buffer.Slice(2, 8));
+            byte[] authChallenge = buffer.Slice(10, ChallengeLength).ToArray();
 
-			/// <summary>
-			/// Command responses are not sent to the query client executing them
-			/// </summary>
-			SuppressCommandResponses = 1,
+            return new QueryHandshake(maxPacketSize, timestamp, authChallenge, serverTimeoutThreshold: BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(10 + ChallengeLength, 2)));
+        }
 
-			/// <summary>
-			/// Server console feed is subscribed after authentication
-			/// </summary>
-			SubscribeServerConsole = 1 << 1,
+        /// <summary>
+        /// Query client flags
+        /// </summary>
+        [Flags]
+        public enum ClientFlags : byte
+        {
+            /// <summary>
+            /// No flags
+            /// </summary>
+            None = 0,
 
-			/// <summary>
-			/// Server logs feed is subscribed after authentication
-			/// </summary>
-			SubscribeServerLogs = 1 << 2,
+            /// <summary>
+            /// Command responses are not sent to the query client executing them
+            /// </summary>
+            SuppressCommandResponses = 1,
 
-			/// <summary>
-			/// Responses to RA commands are serialized and contains metadata (otherwise they contain only response text, without other data)
-			/// </summary>
-			RemoteAdminMetadata = 1 << 3,
+            /// <summary>
+            /// Server console feed is subscribed after authentication
+            /// </summary>
+            SubscribeServerConsole = 1 << 1,
 
-			/// <summary>
-			/// Set when the handshake contains list of permissions requested by the client (other permissions won't be granted by the server)
-			/// </summary>
-			RestrictPermissions = 1 << 4,
+            /// <summary>
+            /// Server logs feed is subscribed after authentication
+            /// </summary>
+            SubscribeServerLogs = 1 << 2,
 
-			/// <summary>
-			/// Set when username (for logging purposes) is specified in the handshake
-			/// </summary>
-			SpecifyLogUsername = 1 << 5,
-		}
-	}
+            /// <summary>
+            /// Responses to RA commands are serialized and contains metadata (otherwise they contain only response text, without other data)
+            /// </summary>
+            RemoteAdminMetadata = 1 << 3,
 
-	/// <summary>
-	/// Utils class for <see cref="QueryHandshake.ClientFlags"/>
-	/// </summary>
-	public static class QueryClientFlagUtils
-	{
-		public static bool HasFlagFast(this QueryHandshake.ClientFlags res, QueryHandshake.ClientFlags flag) => (res & flag) == flag;
-	}
+            /// <summary>
+            /// Set when the handshake contains list of permissions requested by the client (other permissions won't be granted by the server)
+            /// </summary>
+            RestrictPermissions = 1 << 4,
+
+            /// <summary>
+            /// Set when username (for logging purposes) is specified in the handshake
+            /// </summary>
+            SpecifyLogUsername = 1 << 5,
+        }
+    }
+
+    /// <summary>
+    /// Utils class for <see cref="QueryHandshake.ClientFlags"/>
+    /// </summary>
+    public static class QueryClientFlagUtils
+    {
+        public static bool HasFlagFast(this QueryHandshake.ClientFlags res, QueryHandshake.ClientFlags flag) => (res & flag) == flag;
+    }
 }
