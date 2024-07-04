@@ -133,7 +133,7 @@ namespace SCP_SL_Query_Client.NetworkObjects
         /// <param name="buffer">Output data</param>
         public int Serialize(Span<byte> buffer)
         {
-            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(0, 2), MaxPacketSize);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), MaxPacketSize);
             BinaryPrimitives.WriteInt64BigEndian(buffer.Slice(2, 8), Timestamp);
             AuthChallenge.CopyTo(buffer.Slice(10, ChallengeLength));
 
