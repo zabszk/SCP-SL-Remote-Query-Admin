@@ -92,6 +92,17 @@ namespace SCP_SL_Remote_Query_Admin
         {
             AppendConsole(2, $"Disconnected: {reason}");
 
+            if (reason != DisconnectionReason.DisconnectedByClient)
+            {
+                Exception e = _client.GetLastRxError();
+
+                if (e != null)
+                {
+                    AppendConsole(2, $"Exception: {e.Message}");
+                    AppendConsole(2, e.StackTrace);
+                }
+            }
+
             executeButton.Enabled = false;
             disconnectButton.Enabled = false;
             connectButton.Enabled = true;

@@ -247,6 +247,7 @@ namespace SCP_SL_Query_Client
                             break;
                         }
 
+                        lengthToRead = 0;
                         continue;
                     }
 
@@ -273,16 +274,17 @@ namespace SCP_SL_Query_Client
 
                     try
                     {
-                        QueryHandshake response = new QueryHandshake(_rxBufferSize, qh.AuthChallenge, flags, permissions, kickPower, username);
+                        QueryHandshake response = new QueryHandshake(_rxBufferSize, qh.AuthChallenge, flags, permissions, kickPower, username, 500);
                         Send(response, response.SizeToServer);
                     }
                     catch (Exception e)
                     {
                         error = DisconnectionReason.SendingHandshakeResponseFailed;
                         _lastRxError = e;
-                        continue;
+                        break;
                     }
 
+                    lengthToRead = 0;
                     Connected = true;
                     OnConnectedToServer?.Invoke();
                 }
