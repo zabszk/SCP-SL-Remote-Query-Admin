@@ -277,7 +277,7 @@
             this.logCheckBox.Name = "logCheckBox";
             this.logCheckBox.Size = new System.Drawing.Size(174, 24);
             this.logCheckBox.TabIndex = 15;
-            this.logCheckBox.Text = "Subscribe to console feed";
+            this.logCheckBox.Text = "Subscribe to log feed";
             this.logCheckBox.UseSelectable = true;
             //
             // ConsoleForm
