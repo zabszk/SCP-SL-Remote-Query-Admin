@@ -147,6 +147,7 @@ namespace SCP_SL_Remote_Query_Admin
                 }
 
                 console.AppendText(message + Environment.NewLine);
+                console.ScrollToCaret();
             }
         }
     }
